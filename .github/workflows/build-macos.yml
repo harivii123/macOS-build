@@ -1,0 +1,62 @@
+name: Build macOS FinanceSummary
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check environment
+        run: |
+          sw_vers
+          uname -m
+          python3 --version
+          ls -lah
+
+      - name: Build executable
+        run: |
+          chmod +x build_macos_create_executable_here.sh
+          bash -x ./build_macos_create_executable_here.sh
+
+      - name: Create visible double-click launcher
+        run: |
+          cat > "Run FinanceSummary.command" <<'EOF'
+          #!/bin/bash
+          cd "$(dirname "$0")"
+
+          echo "Running FinanceSummary..."
+          echo
+
+          chmod +x ./FinanceSummary
+          ./FinanceSummary
+
+          echo
+          echo "Finished."
+          echo "You can close this window now."
+          read -p "Press Enter to close..."
+          EOF
+
+          chmod +x "Run FinanceSummary.command"
+
+      - name: Package macOS files
+        run: |
+          mkdir FinanceSummary-macos
+          cp FinanceSummary FinanceSummary-macos/
+          cp "Run FinanceSummary.command" FinanceSummary-macos/
+          tar -czf FinanceSummary-macos.tar.gz FinanceSummary-macos
+          ls -lah FinanceSummary-macos.tar.gz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FinanceSummary-macos
+          path: FinanceSummary-macos.tar.gz
