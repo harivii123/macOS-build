@@ -1,0 +1,48 @@
+name: Build macOS FinanceSummary
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python3 -m venv .venv
+        source .venv/bin/activate
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Build executable with PyInstaller
+      run: |
+        source .venv/bin/activate
+        pyinstaller --clean --noconfirm --onefile --name FinanceSummary --distpath . build_accounting_summary.py
+    
+    - name: Upload FinanceSummary executable
+      uses: actions/upload-artifact@v3
+      with:
+        name: FinanceSummary-executable
+        path: FinanceSummary
+        retention-days: 30
+    
+    - name: Display build summary
+      run: |
+        echo "✅ Build completed successfully!"
+        echo "Executable: FinanceSummary"
+        if [ -f FinanceSummary ]; then
+          ls -lh FinanceSummary
+          file FinanceSummary
+        fi
